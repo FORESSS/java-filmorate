@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
-import java.time.Instant;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,52 +14,59 @@ import java.util.Map;
 @RequestMapping("/users")
 @Slf4j
 public class UserController extends BaseController<User> {
-
     private final Map<Long, User> users = new HashMap<>();
 
     @GetMapping
     public Collection<User> getAllUsers() {
-        log.info("Возврат списка пользователей на эндпоинт GET /users");
+        log.info("Возврат списка пользователей");
         return users.values();
     }
 
     @PostMapping
     public User addUser(@Valid @RequestBody User user) {
-        checkUser(user);
-        if (user.getName() == null) {
-            setUserName(user);
-        }
+        checkEmailAndLogin(user);
+        checkName(user);
         user.setId(getNextId(users));
-        log.info("Добавлен пользователь с id={}", user.getId());
+        log.info("Добавлен пользователь с id: {}", user.getId());
         users.put(user.getId(), user);
-        return users.get(user.getId());
+        return user;
     }
 
     @PutMapping
-    public User updateUser(@Valid  @RequestBody User user) {
-        checkUser(user);
-        if (user.getId() == null) {
-            throw new ValidationException("Id должен быть указан");
-        } else if (!users.containsKey(user.getId())) {
-            throw new ValidationException("user c id=" + user.getId() + " не найден");
-        }
-        if (user.getName() == null) {
-            setUserName(user);
-        }
-        log.info("Изменен пользователь с id={}", user.getId());
+    public User updateUser(@Valid @RequestBody User user) {
+        checkId(user);
+        checkEmailAndLogin(user);
+        checkName(user);
+        log.info("Изменены данные пользователя с id: {}", user.getId());
         users.put(user.getId(), user);
-        return users.get(user.getId());
+        return user;
     }
 
-    private void checkUser(User user) {
-        if (user == null) {
-            throw new ValidationException("user equal null");
-        } else if (Instant.parse(user.getBirthday() + "T00:00:00Z").isAfter(Instant.now())) {
-            throw new ValidationException("Дата рождения не может быть в будущем");
+    private void checkId(User user) {
+        if (user.getId() == null) {
+            log.error("Не указан id");
+            throw new ValidationException("Не указан id");
+        } else if (!users.containsKey(user.getId())) {
+            log.error("Пользователь с id: {} не найден", user.getId());
+            throw new ValidationException("Пользователь с id: " + user.getId() + " не найден");
         }
     }
 
-    private void setUserName(User user) {
-        user.setName(user.getLogin());
+    private void checkName(User user) {
+        if (user.getName() == null || user.getName().isBlank()) {
+            log.warn("В качестве имени будет использован логин {}", user.getLogin());
+            user.setName(user.getLogin());
+        }
+    }
+
+    private void checkEmailAndLogin(User user) {
+        if (users.values().stream().anyMatch(us -> us.getEmail().equals(user.getEmail()))) {
+            log.error("E-mail {} занят", user.getEmail());
+            throw new ValidationException("E-mail: " + user.getEmail() + " занят");
+        }
+        if (users.values().stream().anyMatch(us -> us.getLogin().equals(user.getLogin()))) {
+            log.error("Логин {} занят", user.getLogin());
+            throw new ValidationException("Логин: " + user.getLogin() + " занят");
+        }
     }
 }
