@@ -1,95 +1,80 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
-import ru.yandex.practicum.filmorate.controller.FilmController;
 import ru.yandex.practicum.filmorate.model.Film;
 
-@SpringBootTest
-public class FilmControllerTest {
+import java.time.LocalDate;
+import java.util.Collection;
 
-    FilmController filmController;
+import static org.junit.jupiter.api.Assertions.*;
+
+class FilmControllerTest {
+    private FilmController filmController;
 
     @BeforeEach
-    void createFilmController() {
+    void setUp() {
         filmController = new FilmController();
     }
 
     @Test
-    void shouldThrowValidationExceptionThenAddFilmAndFilmEqualNull() {
-        Assertions.assertThrows(ValidationException.class, () -> filmController.addFilm(null), "не выброшено исключение " +
-                "на описание длинной 201 символ");
+    void testGetAllFilmsEmpty() {
+        Collection<Film> films = filmController.getAllFilms();
+        assertEquals(0, films.size());
     }
 
     @Test
-    void shouldReturnTrueThenAddNewFilm() {
-        Film film = filmController.addFilm(new Film(null, "name", "description", "1895-12-28", 40));
-
-        Assertions.assertTrue(filmController.getAllFilms().contains(film), "Фильм не добавлен в приложение");
+    void testAddValidFilm() {
+        Film film = new Film(null, "Film", "Description", LocalDate.now(), 120);
+        Film addedFilm = filmController.addFilm(film);
+        assertNotNull(addedFilm.getId());
+        assertEquals("Film", addedFilm.getName());
+        assertEquals("Description", addedFilm.getDescription());
+        assertEquals(LocalDate.now(), addedFilm.getReleaseDate());
+        assertEquals(120, addedFilm.getDuration());
     }
 
     @Test
-    void shouldThrowValidationExceptionThenAddNewFilmAndDescription201Characters() {
-        String description = "В 2296 году, более 200 лет спустя после ядерной войны, потомки привилегированных и богатых" +
-                " живут в автономных благоустроенных бункерах, а остальное человечество выживает в жёстких условиях. Умница и...";
-        Film film = new Film(null, "Fallout", description, "1895-12-28", 40);
-
-        Assertions.assertThrows(ValidationException.class, () -> filmController.addFilm(film), "не выброшено исключение " +
-                "на описание длинной 201 символ");
+    void testAddFilmWithBlankName() {
+        Film film = new Film(null, "", "Description", LocalDate.now(), 120);
+        assertThrows(ValidationException.class, () -> filmController.addFilm(film));
     }
 
     @Test
-    void shouldThrowValidationExceptionThenAddNewFilmAndReleaseDate1895_12_27() {
-        Film film = new Film(null, "name", "description", "1895-12-27", 40);
-
-        Assertions.assertThrows(ValidationException.class, () -> filmController.addFilm(film), "Не выброшено исключение" +
-                " при дате релиза 1895-12-27");
+    void testAddFilmWithLongDescription() {
+        StringBuilder longDescription = new StringBuilder();
+        for (int i = 0; i < 201; i++) {
+            longDescription.append("a");
+        }
+        Film film = new Film(null, "Test Film", longDescription.toString(), LocalDate.now(), 120);
+        assertThrows(ValidationException.class, () -> filmController.addFilm(film));
     }
 
     @Test
-    void shouldThrowValidationExceptionThenUpdateFilmAndFilmEqualNull() {
-        Assertions.assertThrows(ValidationException.class, () -> filmController.updateFilm(null), "не выброшено исключение " +
-                "на описание длинной 201 символ");
+    void testAddFilmWithFutureReleaseDate() {
+        Film film = new Film(null, "Test Film", "Description", LocalDate.now().plusDays(1), 120);
+        assertThrows(ValidationException.class, () -> filmController.addFilm(film));
     }
 
     @Test
-    void shouldReturnTrueThenUpdateFilm() {
-        Film film = filmController.addFilm(new Film(null, "name", "description", "1895-12-28", 40));
-        film.setName("NewName");
-        filmController.updateFilm(film);
-
-        Assertions.assertTrue(filmController.getAllFilms().contains(film), "Фильм не добавлен в приложение");
+    void testAddFilmWithNegativeDuration() {
+        Film film = new Film(null, "Test Film", "Description", LocalDate.now(), -120);
+        assertThrows(ValidationException.class, () -> filmController.addFilm(film));
     }
 
     @Test
-    void shouldThrowValidationExceptionThenUpdateFilmAndDescription201Characters() {
-        Film film = filmController.addFilm(new Film(null, "name", "description", "1895-12-28", 40));
-        String description = "В 2296 году, более 200 лет спустя после ядерной войны, потомки привилегированных и богатых" +
-                " живут в автономных благоустроенных бункерах, а остальное человечество выживает в жёстких условиях. Умница и...";
-        film.setDescription(description);
-
-        Assertions.assertThrows(ValidationException.class, () -> filmController.updateFilm(film), "не выброшено исключение " +
-                "на описание длинной 201 символ");
+    void testUpdateValidFilm() {
+        Film film = new Film(123L, "Updated Film", "Updated Description", LocalDate.of(2024, 1, 1), 120);
+        Film updatedFilm = filmController.updateFilm(film);
+        assertEquals(123L, updatedFilm.getId());
+        assertEquals("Updated Film", updatedFilm.getName());
+        assertEquals("Updated Description", updatedFilm.getDescription());
     }
 
     @Test
-    void shouldThrowValidationExceptionThenUpdateFilmAndReleaseDate1895_12_27() {
-        Film film = filmController.addFilm(new Film(null, "name", "description", "1895-12-28", 40));
-        film.setReleaseDate("1895-12-27");
-
-        Assertions.assertThrows(ValidationException.class, () -> filmController.updateFilm(film), "Не выброшено исключение" +
-                " при дате релиза 1895-12-27");
-    }
-
-    @Test
-    void shouldReturn2ThenAdd2Films() {
-        filmController.addFilm(new Film(null, "name1", "description1", "1895-12-28", 40));
-        filmController.addFilm(new Film(null, "name2", "description2", "1895-12-28", 50));
-
-        Assertions.assertEquals(2, filmController.getAllFilms().size(), "количество фильмов в приложении не " +
-                "соответствует количеству добавленных фильмов");
+    void testUpdateFilmWithNoId() {
+        Film film = new Film(null, "Updated Film", "Updated Description", LocalDate.now(), 120);
+        assertThrows(ValidationException.class, () -> filmController.updateFilm(film));
     }
 }
