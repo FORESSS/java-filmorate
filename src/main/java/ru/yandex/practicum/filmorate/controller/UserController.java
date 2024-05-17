@@ -2,6 +2,8 @@ package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
@@ -23,50 +25,61 @@ public class UserController extends BaseController<User> {
     }
 
     @PostMapping
-    public User addUser(@Valid @RequestBody User user) {
-        checkEmailAndLogin(user);
-        checkName(user);
-        user.setId(getNextId(users));
-        log.info("Добавлен пользователь с id: {}", user.getId());
-        users.put(user.getId(), user);
-        return user;
-    }
-
-    @PutMapping
-    public User updateUser(@Valid @RequestBody User user) {
-        checkId(user);
-        checkEmailAndLogin(user);
-        checkName(user);
-        log.info("Изменены данные пользователя с id: {}", user.getId());
-        users.put(user.getId(), user);
-        return user;
-    }
-
-    private void checkId(User user) {
-        if (user.getId() == null) {
-            log.error("Не указан id");
-            throw new ValidationException("Не указан id");
-        } else if (!users.containsKey(user.getId())) {
-            log.error("Пользователь с id: {} не найден", user.getId());
-            throw new ValidationException("Пользователь с id: " + user.getId() + " не найден");
+    public ResponseEntity<User> addUser(@Valid @RequestBody User user) {
+        try {
+            checkEmail(user);
+            checkLogin(user);
+            setName(user);
+            user.setId(getNextId(users));
+            log.info("Добавлен пользователь с id: {}", user.getId());
+            users.put(user.getId(), user);
+            return ResponseEntity.status(HttpStatus.CREATED).body(user);
+        } catch (ValidationException e) {
+            log.error("Произошла ошибка валидации: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(user);
         }
     }
 
-    private void checkName(User user) {
+    @PutMapping
+    public ResponseEntity<User> updateUser(@Valid @RequestBody User user) {
+        if (user.getId() == null) {
+            log.error("Не указан id пользователя");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(user);
+        } else if (!users.containsKey(user.getId())) {
+            log.error("Пользователь с id: {} не найден", user.getId());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(user);
+        }
+        try {
+            checkEmail(user);
+            checkLogin(user);
+            setName(user);
+            log.info("Обновлены данные пользователя: {}", user.getId());
+            users.put(user.getId(), user);
+            return ResponseEntity.status(HttpStatus.OK).body(user);
+        } catch (ValidationException e) {
+            log.error("Произошла ошибка валидации: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(user);
+        }
+    }
+
+    private void setName(User user) {
         if (user.getName() == null || user.getName().isBlank()) {
-            log.warn("В качестве имени будет использован логин {}", user.getLogin());
+            log.warn("Логин будет использован, как имя пользователя: {}", user.getLogin());
             user.setName(user.getLogin());
         }
     }
 
-    private void checkEmailAndLogin(User user) {
+    private void checkEmail(User user) {
         if (users.values().stream().anyMatch(us -> us.getEmail().equals(user.getEmail()))) {
-            log.error("E-mail {} занят", user.getEmail());
-            throw new ValidationException("E-mail: " + user.getEmail() + " занят");
+            log.error("Email {} уже используется", user.getEmail());
+            throw new ValidationException("Email: " + user.getEmail() + " уже используется");
         }
+    }
+
+    private void checkLogin(User user) {
         if (users.values().stream().anyMatch(us -> us.getLogin().equals(user.getLogin()))) {
-            log.error("Логин {} занят", user.getLogin());
-            throw new ValidationException("Логин: " + user.getLogin() + " занят");
+            log.error("Логин {} уже занят", user.getLogin());
+            throw new ValidationException("Логин: " + user.getLogin() + " уже занят");
         }
     }
 }
