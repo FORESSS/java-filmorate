@@ -27,16 +27,11 @@ public class FilmController extends BaseController<Film> {
 
     @PostMapping
     public ResponseEntity<Film> addFilm(@Valid @RequestBody Film film) {
-        try {
-            checkReleaseDate(film);
-            film.setId(getNextId(films));
-            log.info("Добавлен фильм с id: {}", film.getId());
-            films.put(film.getId(), film);
-            return ResponseEntity.status(HttpStatus.CREATED).body(film);
-        } catch (ValidationException e) {
-            log.error("Произошла ошибка валидации: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(film);
-        }
+        checkReleaseDate(film);
+        film.setId(getNextId(films));
+        log.info("Добавлен фильм с id: {}", film.getId());
+        films.put(film.getId(), film);
+        return ResponseEntity.status(HttpStatus.CREATED).body(film);
     }
 
     @PutMapping
@@ -48,19 +43,15 @@ public class FilmController extends BaseController<Film> {
             log.error("Фильм с id: {} не найден", film.getId());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(film);
         }
-        try {
-            checkReleaseDate(film);
-            log.info("Изменен фильм с id: {}", film.getId());
-            films.put(film.getId(), film);
-            return ResponseEntity.status(HttpStatus.OK).body(film);
-        } catch (ValidationException e) {
-            log.error("Произошла ошибка валидации: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        }
+        checkReleaseDate(film);
+        log.info("Изменен фильм с id: {}", film.getId());
+        films.put(film.getId(), film);
+        return ResponseEntity.status(HttpStatus.OK).body(film);
     }
 
     private void checkReleaseDate(Film film) {
-        if (film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
+        if (film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))
+                || film.getReleaseDate().isAfter(LocalDate.now())) {
             throw new ValidationException("Неверная дата релиза");
         }
     }
