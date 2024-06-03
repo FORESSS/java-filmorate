@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 @Data
 @AllArgsConstructor
@@ -24,4 +25,5 @@ public class User {
     @NotNull(message = "Обязательное поле")
     @Past(message = "Дата рождения должна быть меньше текущей даты")
     private LocalDate birthday;
+    private Set<Long> friends;
 }
