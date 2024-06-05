@@ -28,5 +28,6 @@ public class Film {
     @NotNull(message = "Обязательное поле")
     @Positive(message = "Продолжительность должна быть положительной")
     private Integer duration;
+
     private Set<Long> likes;
 }

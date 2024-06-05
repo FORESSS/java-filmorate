@@ -7,6 +7,6 @@ import java.util.Comparator;
 public class FilmRatingComparator implements Comparator<Film> {
     @Override
     public int compare(Film o1, Film o2) {
-        return o1.getLikes().size() - o2.getLikes().size();
+        return Integer.compare(o1.getLikes().size(), o2.getLikes().size());
     }
 }
