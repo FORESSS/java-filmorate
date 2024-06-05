@@ -22,7 +22,7 @@ public class FilmControllerTest {
     @BeforeEach
     public void create() {
         film = new Film(1L, "Film", "Description",
-                LocalDate.of(2024, 1, 1), 120, Collections.emptySet());
+                LocalDate.of(2024, 1, 1), 120);
     }
 
     @Test

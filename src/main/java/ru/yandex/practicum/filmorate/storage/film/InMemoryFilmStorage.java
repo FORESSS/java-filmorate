@@ -3,7 +3,6 @@ package ru.yandex.practicum.filmorate.storage.film;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.comparator.FilmRatingComparator;
-import ru.yandex.practicum.filmorate.exception.InvalidRequestException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -11,14 +10,12 @@ import ru.yandex.practicum.filmorate.storage.BaseStorage;
 
 import java.time.LocalDate;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Component
 @Slf4j
 public class InMemoryFilmStorage extends BaseStorage<Film> implements FilmStorage {
     private final Map<Long, Film> films = new HashMap<>();
     private static final LocalDate INVALID_RELEASE_DATE = LocalDate.of(1895, 12, 28);
-    private static final FilmRatingComparator filmRatingComparator = new FilmRatingComparator();
 
     @Override
     public Collection<Film> getAllFilms() {
@@ -67,15 +64,11 @@ public class InMemoryFilmStorage extends BaseStorage<Film> implements FilmStorag
 
     @Override
     public List<Film> getPopular(Integer count) {
-        if (count > films.size()) {
-            log.error("Превышено количество популярных фильмов в списке: {}", count);
-            throw new InvalidRequestException("Превышено количество популярных фильмов в списке");
-        }
-        log.info("Возврат списка популярных фильмов");
+        int maxSize = (count >= films.size()) ? films.size() : count;
         return films.values().stream()
-                .sorted(filmRatingComparator.reversed())
-                .limit(count)
-                .collect(Collectors.toList());
+                .sorted(new FilmRatingComparator().reversed())
+                .limit(maxSize)
+                .toList();
     }
 
     private void validateFilm(Film film) {
