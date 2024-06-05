@@ -19,14 +19,12 @@ public class InMemoryFilmStorage extends BaseStorage<Film> implements FilmStorag
 
     @Override
     public Collection<Film> getAllFilms() {
-        log.info("Возврат списка фильмов");
         return films.values();
     }
 
     @Override
     public Optional<Film> getFilmById(Long filmId) {
         checkId(filmId);
-        log.info("Возврат фильма с id: {}", filmId);
         return Optional.ofNullable(films.get(filmId));
     }
 
@@ -36,7 +34,6 @@ public class InMemoryFilmStorage extends BaseStorage<Film> implements FilmStorag
         long newId = getNextId(films);
         film.setId(newId);
         films.put(newId, film);
-        log.info("Добавлен фильм с id: {}", film.getId());
         return film;
     }
 
@@ -46,20 +43,17 @@ public class InMemoryFilmStorage extends BaseStorage<Film> implements FilmStorag
         validateFilm(newFilm);
         checkFilmExists(newFilm.getId());
         films.put(newFilm.getId(), newFilm);
-        log.info("Изменен фильм с id: {}", newFilm.getId());
         return newFilm;
     }
 
     @Override
     public void like(Film film, Long userId) {
         film.getLikes().add(userId);
-        log.info("Пользователь с id: {} поставил лайк фильму с id: {}", userId, film.getId());
     }
 
     @Override
     public void removeLike(Film film, Long userId) {
         film.getLikes().remove(userId);
-        log.info("Пользователь с id: {} удалил лайк у фильма с id: {}", userId, film.getId());
     }
 
     @Override

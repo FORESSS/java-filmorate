@@ -16,14 +16,12 @@ public class InMemoryUserStorage extends BaseStorage<User> implements UserStorag
 
     @Override
     public Collection<User> getAllUsers() {
-        log.info("Возврат списка пользователей");
         return users.values();
     }
 
     @Override
     public Optional<User> getUserById(Long userId) {
         checkId(userId);
-        log.info("Возврат пользователя с id: {}", userId);
         return Optional.ofNullable(users.get(userId));
     }
 
@@ -33,7 +31,6 @@ public class InMemoryUserStorage extends BaseStorage<User> implements UserStorag
         long newId = getNextId(users);
         user.setId(newId);
         users.put(newId, user);
-        log.info("Добавлен пользователь с id: {}", user.getId());
         return user;
     }
 
@@ -43,7 +40,6 @@ public class InMemoryUserStorage extends BaseStorage<User> implements UserStorag
         checkUserExists(newUser.getId());
         setName(newUser);
         users.put(newUser.getId(), newUser);
-        log.info("Обновлены данные пользователя с id: {}", newUser.getId());
         return newUser;
     }
 
@@ -53,7 +49,6 @@ public class InMemoryUserStorage extends BaseStorage<User> implements UserStorag
         userFriends.add(friend);
         Set<User> friendFriends = getFriendSet(friend);
         friendFriends.add(user);
-        log.info("Пользователь с id: {} добавил в друзья пользователя с id: {}", user.getId(), friend.getId());
     }
 
     @Override
@@ -62,7 +57,6 @@ public class InMemoryUserStorage extends BaseStorage<User> implements UserStorag
         userFriends.remove(friend);
         Set<User> friendFriends = getFriendSet(friend);
         friendFriends.remove(user);
-        log.info("Пользователь с id: {} удалил из друзей пользователя с id: {}", user.getId(), friend.getId());
     }
 
     @Override
@@ -70,7 +64,6 @@ public class InMemoryUserStorage extends BaseStorage<User> implements UserStorag
         checkId(userId);
         Set<User> userFriends = getFriendSet(getUserById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id: " + userId + " не найден")));
-        log.info("Возврат списка друзей пользователя с id: {}", userId);
         return new ArrayList<>(userFriends);
     }
 
@@ -79,7 +72,6 @@ public class InMemoryUserStorage extends BaseStorage<User> implements UserStorag
         Set<User> userFriends = getFriendSet(user);
         Set<User> otherUserFriends = getFriendSet(otherUser);
         userFriends.retainAll(otherUserFriends);
-        log.info("Возврат списка общих друзей пользователей с id: {} и {}", user.getId(), otherUser.getId());
         return userFriends.stream().toList();
     }
 
