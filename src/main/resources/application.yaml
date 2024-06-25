@@ -1,6 +1,6 @@
-filmorate:
-  filmservice:
-    count: 10
+#filmorate:
+#  filmservice:
+#    count: 10
 
 logging:
   level:
