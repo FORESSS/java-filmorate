@@ -1,14 +1,12 @@
 package ru.yandex.practicum.filmorate.dto.user;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.Data;
 
 import java.time.LocalDate;
 
-@Getter
-@Setter
+@Data
 @Builder
-@ToString
-@EqualsAndHashCode
 public class UserDTO {
     private int id;
     private String email;

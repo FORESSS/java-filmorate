@@ -7,8 +7,8 @@ import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Data;
 import ru.yandex.practicum.filmorate.annotation.Release;
-import ru.yandex.practicum.filmorate.dto.genre.GenreFromNewOrUpdateFilmRequestDTO;
-import ru.yandex.practicum.filmorate.dto.rating.RatingFromNewOrUpdateFilmRequestDTO;
+import ru.yandex.practicum.filmorate.dto.genre.GenreRequestDTO;
+import ru.yandex.practicum.filmorate.dto.rating.RatingRequestDTO;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -30,6 +30,6 @@ public class UpdateFilmRequestDTO {
     @Positive(message = "Продолжительность должна быть положительной")
     private int duration;
     @NotNull(message = "Обязательное поле")
-    private RatingFromNewOrUpdateFilmRequestDTO mpa;
-    private List<GenreFromNewOrUpdateFilmRequestDTO> genres;
+    private RatingRequestDTO mpa;
+    private List<GenreRequestDTO> genres;
 }
