@@ -97,7 +97,7 @@ public class UserService {
         }
     }
 
-    private void checkUserId(int userId) {
+    public void checkUserId(int userId) {
         if (!userRepository.containsUserById(userId)) {
             throw new IdNotFoundException("Пользователь с id: " + userId + " не найден");
         }
