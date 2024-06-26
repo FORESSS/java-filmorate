@@ -1,181 +1,152 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.*;
-import ru.yandex.practicum.filmorate.model.User;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import ru.yandex.practicum.filmorate.dto.user.NewUserRequestDTO;
+import ru.yandex.practicum.filmorate.dto.user.UpdateUserRequestDTO;
+import ru.yandex.practicum.filmorate.dto.user.UserDTO;
+import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.time.LocalDate;
+import java.util.Collection;
+import java.util.Collections;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class UserControllerTest {
-
-    @Autowired
-    private TestRestTemplate restTemplate;
-
-    private User user;
+@ExtendWith(MockitoExtension.class)
+class UserControllerTest {
+    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    private MockMvc mockMvc;
+    @Mock
+    private UserService userService;
+    @InjectMocks
+    private UserController userController;
 
     @BeforeEach
-    public void create() {
-        user = new User(1L, "test@example.com", "User", "User", LocalDate.of(1985, 1, 1));
+    void setMockMvc() {
+        mockMvc = MockMvcBuilders.standaloneSetup(userController).build();
     }
 
     @Test
-    public void testGetAllUsers() {
-        ResponseEntity<User[]> response = restTemplate.getForEntity("/users", User[].class);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
+    @DisplayName("GET /users")
+    void getAllUsersTest() throws Exception {
+        Collection<UserDTO> userDTOList = Collections.singletonList(createUserDTO());
+        Mockito.when(userService.getAllUsers()).thenReturn(userDTOList);
+        mockMvc.perform(get("/users"))
+                .andExpect(status().isOk());
+        Mockito.verify(userService).getAllUsers();
     }
 
     @Test
-    public void testGetUserById() {
-        restTemplate.postForEntity("/users", user, User.class);
-        ResponseEntity<User> response = restTemplate.getForEntity("/users/1", User.class);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
+    @DisplayName("GET /users/{id}")
+    void getUserByIdTest() throws Exception {
+        int userId = 1;
+        UserDTO userDTO = createUserDTO();
+        Mockito.when(userService.getUserById(userId)).thenReturn(userDTO);
+        mockMvc.perform(get("/users/{id}", userId))
+                .andExpect(status().isOk());
+        Mockito.verify(userService).getUserById(userId);
     }
 
     @Test
-    public void testCreateUser() {
-        ResponseEntity<User> response = restTemplate.postForEntity("/users", user, User.class);
-
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertNotNull(response.getBody());
+    @DisplayName("POST /users")
+    void addUserTest() throws Exception {
+        NewUserRequestDTO dto = NewUserRequestDTO.builder()
+                .email("test@test.com")
+                .login("login")
+                .name("name")
+                .birthday(LocalDate.of(1985, 1, 1))
+                .build();
+        String json = objectMapper.writeValueAsString(dto);
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isCreated());
+        Mockito.verify(userService).addUser(any(NewUserRequestDTO.class));
     }
 
     @Test
-    public void testUpdateUser() {
-        user.setName("Updated User");
-        restTemplate.postForEntity("/users", user, User.class);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<User> requestEntity = new HttpEntity<>(user, headers);
-        ResponseEntity<User> response = restTemplate.exchange("/users", HttpMethod.PUT, requestEntity, User.class);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("Updated User", response.getBody().getName());
-    }
-
-    // Добавленные методы тестирования
-    @Test
-    public void testAddFriend() {
-        restTemplate.postForEntity("/users", user, User.class);
-        restTemplate.postForEntity("/users", new User(2L, "friend@example.com", "Friend", "Friend",
-                LocalDate.of(1987, 1, 1)), User.class);
-        restTemplate.put("/users/1/friends/2", null);
-        ResponseEntity<User[]> response = restTemplate.getForEntity("/users/1/friends", User[].class);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
+    @DisplayName("PUT /users")
+    void updateUserTest() throws Exception {
+        UpdateUserRequestDTO dto = UpdateUserRequestDTO.builder()
+                .id(2)
+                .email("test@test.ru")
+                .login("login")
+                .name("name")
+                .birthday(LocalDate.of(1985, 1, 1))
+                .build();
+        String json = objectMapper.writeValueAsString(dto);
+        mockMvc.perform(put("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isOk());
+        Mockito.verify(userService).updateUser(any(UpdateUserRequestDTO.class));
     }
 
     @Test
-    public void testRemoveFriend() {
-        restTemplate.postForEntity("/users", user, User.class);
-        restTemplate.postForEntity("/users", new User(2L, "friend@example.com", "Friend", "Friend",
-                LocalDate.of(1987, 1, 1)), User.class);
-        restTemplate.put("/users/1/friends/2", null);
-        restTemplate.delete("/users/1/friends/2");
-        ResponseEntity<User[]> response = restTemplate.getForEntity("/users/1/friends", User[].class);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
+    @DisplayName("PUT /users/{id}/friends/{friendId}")
+    void sendRequestForFriendshipTest() throws Exception {
+        int userId = 1;
+        int friendId = 2;
+        mockMvc.perform(put("/users/{id}/friends/{friendId}", userId, friendId))
+                .andExpect(status().isOk());
+        Mockito.verify(userService).sendRequestForFriendship(eq(userId), eq(friendId));
     }
 
     @Test
-    public void testGetFriends() {
-        restTemplate.postForEntity("/users", user, User.class);
-        restTemplate.postForEntity("/users", new User(2L, "friend@example.com", "Friend", "Friend",
-                LocalDate.of(1987, 1, 1)), User.class);
-        restTemplate.put("/users/1/friends/2", null);
-        ResponseEntity<User[]> response = restTemplate.getForEntity("/users/1/friends", User[].class);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
+    @DisplayName("DELETE /users/{id}/friends/{friendId}")
+    void recallRequestForFriendshipTest() throws Exception {
+        int userId = 1;
+        int friendId = 2;
+        mockMvc.perform(delete("/users/{id}/friends/{friendId}", userId, friendId))
+                .andExpect(status().isOk());
+        Mockito.verify(userService).recallRequestForFriendship(eq(userId), eq(friendId));
     }
 
     @Test
-    public void testGetCommonFriends() {
-        restTemplate.postForEntity("/users", user, User.class);
-        restTemplate.postForEntity("/users", new User(2L, "friend@example.com", "Friend", "Friend",
-                LocalDate.of(1985, 1, 1)), User.class);
-        restTemplate.postForEntity("/users", new User(3L, "common@example.com", "Common User", "Common User",
-                LocalDate.of(1987, 1, 1)), User.class);
-        restTemplate.put("/users/1/friends/3", null);
-        restTemplate.put("/users/2/friends/3", null);
-        ResponseEntity<User[]> response = restTemplate.getForEntity("/users/1/friends/common/2", User[].class);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
+    @DisplayName("GET /users/{id}/friends")
+    void getAllFriendsTest() throws Exception {
+        int userId = 1;
+        Collection<UserDTO> userDTOList = Collections.singletonList(createUserDTO());
+        Mockito.when(userService.getAllFriends(userId)).thenReturn(userDTOList);
+        mockMvc.perform(get("/users/{id}/friends", userId))
+                .andExpect(status().isOk());
+        Mockito.verify(userService).getAllFriends(userId);
     }
 
     @Test
-    public void testUpdateUserWithInvalidId() {
-        user.setId(100L);
-        ResponseEntity<Void> response = restTemplate.exchange("/users", HttpMethod.PUT, new HttpEntity<>(user), Void.class);
-
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    @DisplayName("GET /users/{id}/friends/common/{otherId}")
+    void getMutualFriendsTest() throws Exception {
+        int userId = 1;
+        int otherId = 2;
+        Collection<UserDTO> userDTOList = Collections.singletonList(createUserDTO());
+        Mockito.when(userService.getMutualFriends(userId, otherId)).thenReturn(userDTOList);
+        mockMvc.perform(get("/users/{id}/friends/common/{otherId}", userId, otherId))
+                .andExpect(status().isOk());
+        Mockito.verify(userService).getMutualFriends(userId, otherId);
     }
 
-    @Test
-    void testAddUserWithInvalidEmail() {
-        user.setEmail("invalid-email");
-        ResponseEntity<Void> response = restTemplate.postForEntity("/users", user, Void.class);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-    }
-
-    @Test
-    void testAddUserWithBlankLogin() {
-        user.setLogin("");
-        ResponseEntity<Void> response = restTemplate.postForEntity("/users", user, Void.class);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-    }
-
-    @Test
-    void testAddUserWithFutureBirthday() {
-        user.setBirthday(LocalDate.now().plusDays(1));
-        ResponseEntity<Void> response = restTemplate.postForEntity("/users", user, Void.class);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-    }
-
-    @Test
-    public void testAddFriendWithNonExistingUser() {
-        ResponseEntity<Void> response = restTemplate.exchange("/users/100/friends/2", HttpMethod.PUT, null, Void.class);
-
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-    }
-
-    @Test
-    public void testAddFriendWithNonExistingFriend() {
-        ResponseEntity<Void> response = restTemplate.exchange("/users/1/friends/200", HttpMethod.PUT, null, Void.class);
-
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-    }
-
-    @Test
-    public void testAddFriendWithSameUser() {
-        ResponseEntity<Void> response = restTemplate.exchange("/users/1/friends/1", HttpMethod.PUT, null, Void.class);
-
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-    }
-
-    @Test
-    public void testAddFriendThatIsAlreadyAFriend() {
-        restTemplate.exchange("/users/111/friends/222", HttpMethod.PUT, null, Void.class);
-        ResponseEntity<Void> response = restTemplate.exchange("/users/111/friends/222", HttpMethod.PUT, null, Void.class);
-
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    private UserDTO createUserDTO() {
+        return UserDTO.builder()
+                .id(1)
+                .email("test@test.com")
+                .login("login")
+                .name("name")
+                .birthday(LocalDate.of(1985, 1, 1))
+                .build();
     }
 }

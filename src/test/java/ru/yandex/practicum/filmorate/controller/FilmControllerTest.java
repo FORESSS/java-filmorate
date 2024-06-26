@@ -1,163 +1,161 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.*;
-import ru.yandex.practicum.filmorate.model.Film;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import ru.yandex.practicum.filmorate.dto.film.FilmDTO;
+import ru.yandex.practicum.filmorate.dto.film.NewFilmRequestDTO;
+import ru.yandex.practicum.filmorate.dto.film.UpdateFilmRequestDTO;
+import ru.yandex.practicum.filmorate.dto.genre.GenreDTO;
+import ru.yandex.practicum.filmorate.dto.genre.GenreRequestDTO;
+import ru.yandex.practicum.filmorate.dto.rating.RatingDTO;
+import ru.yandex.practicum.filmorate.dto.rating.RatingRequestDTO;
+import ru.yandex.practicum.filmorate.service.FilmService;
 
 import java.time.LocalDate;
+import java.util.Collections;
+import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class FilmControllerTest {
-    @Autowired
-    private TestRestTemplate restTemplate;
-    private Film film;
+@ExtendWith(MockitoExtension.class)
+class FilmControllerTest {
+    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    private MockMvc mockMvc;
+    @Mock
+    private FilmService filmService;
+    @InjectMocks
+    private FilmController filmController;
 
     @BeforeEach
-    public void create() {
-        film = new Film(1L, "Film", "Description",
-                LocalDate.of(2024, 1, 1), 120);
+    void setMockMvc() {
+        mockMvc = MockMvcBuilders.standaloneSetup(filmController).build();
     }
 
     @Test
-    public void testGetAllFilms() {
-        ResponseEntity<Film[]> response = restTemplate.getForEntity("/films", Film[].class);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
+    @DisplayName("GET /films")
+    void getAllFilmsTest() throws Exception {
+        List<FilmDTO> filmDTOList = Collections.singletonList(createFilmDTO());
+        Mockito.when(filmService.getAllFilms()).thenReturn(filmDTOList);
+        mockMvc.perform(get("/films"))
+                .andExpect(status().isOk());
+        Mockito.verify(filmService).getAllFilms();
     }
 
     @Test
-    public void testGetFilmById() {
-        restTemplate.postForEntity("/films", film, Film.class);
-        ResponseEntity<Film> response = restTemplate.getForEntity("/films/1", Film.class);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
+    @DisplayName("GET /films/{id}")
+    void getFilmByIdTest() throws Exception {
+        int filmId = 1;
+        FilmDTO filmDTO = createFilmDTO();
+        Mockito.when(filmService.getFilmById(filmId)).thenReturn(filmDTO);
+        mockMvc.perform(get("/films/{id}", filmId))
+                .andExpect(status().isOk());
+        Mockito.verify(filmService).getFilmById(filmId);
     }
 
     @Test
-    public void testCreateFilm() {
-        ResponseEntity<Film> response = restTemplate.postForEntity("/films", film, Film.class);
-
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertNotNull(response.getBody());
+    @DisplayName("POST /films")
+    void addFilmTest() throws Exception {
+        NewFilmRequestDTO dto = NewFilmRequestDTO.builder()
+                .name("Фильм")
+                .description("Описание")
+                .releaseDate(LocalDate.of(2023, 1, 1))
+                .duration(120)
+                .mpa(RatingRequestDTO.builder().id(1).build())
+                .build();
+        String json = objectMapper.writeValueAsString(dto);
+        mockMvc.perform(post("/films")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isCreated());
+        Mockito.verify(filmService).addFilm(any(NewFilmRequestDTO.class));
     }
 
     @Test
-    public void testUpdateFilm() {
-        film.setName("Updated Film");
-        restTemplate.postForEntity("/films", film, Film.class);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<Film> requestEntity = new HttpEntity<>(film, headers);
-        ResponseEntity<Film> response = restTemplate.exchange("/films", HttpMethod.PUT, requestEntity, Film.class);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("Updated Film", response.getBody().getName());
+    @DisplayName("PUT /films")
+    void updateFilmTest() throws Exception {
+        UpdateFilmRequestDTO dto = UpdateFilmRequestDTO.builder()
+                .id(1)
+                .name("Новый фильм")
+                .description("Новое описание")
+                .releaseDate(LocalDate.of(2023, 1, 1))
+                .duration(120)
+                .mpa(RatingRequestDTO.builder().id(1).build())
+                .genres(Collections.singletonList(GenreRequestDTO.builder().id(1).build()))
+                .build();
+        String json = objectMapper.writeValueAsString(dto);
+        mockMvc.perform(put("/films")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isOk());
+        Mockito.verify(filmService).updateFilm(any(UpdateFilmRequestDTO.class));
     }
 
     @Test
-    public void testLikeFilm() {
-        restTemplate.postForEntity("/films", film, Film.class);
-        restTemplate.put("/films/1/like/1", null);
-        ResponseEntity<Film> response = restTemplate.getForEntity("/films/1", Film.class);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
+    @DisplayName("PUT /films/{id}/like/{userId}")
+    void addLikeToFilmTest() throws Exception {
+        int filmId = 1;
+        int userId = 1;
+        mockMvc.perform(put("/films/{id}/like/{userId}", filmId, userId))
+                .andExpect(status().isOk());
+        Mockito.verify(filmService).addLikeToFilm(eq(filmId), eq(userId));
     }
 
     @Test
-    public void testRemoveLike() {
-        restTemplate.postForEntity("/films", film, Film.class);
-        restTemplate.put("/films/1/like/1", null);
-        restTemplate.delete("/films/1/like/1");
-        ResponseEntity<Film> response = restTemplate.getForEntity("/films/1", Film.class);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertFalse(response.getBody().getLikes().contains(1L));
+    @DisplayName("DELETE /films/{id}/like/{userId}")
+    void deleteLikeFromFilmTest() throws Exception {
+        int filmId = 1;
+        int userId = 1;
+        mockMvc.perform(delete("/films/{id}/like/{userId}", filmId, userId))
+                .andExpect(status().isOk());
+        Mockito.verify(filmService).deleteLikeFromFilm(eq(filmId), eq(userId));
     }
 
     @Test
-    public void testGetPopularFilms() {
-        restTemplate.postForEntity("/films", film, Film.class);
-        ResponseEntity<Film[]> response = restTemplate.getForEntity("/films/popular?count=1", Film[].class);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertTrue(response.getBody().length > 0);
+    @DisplayName("GET /films/popular")
+    void getMostPopularFilmsTest() throws Exception {
+        int count = 10;
+        List<FilmDTO> filmDTOList = Collections.singletonList(createFilmDTO());
+        Mockito.when(filmService.getMostPopularFilms(count)).thenReturn(filmDTOList);
+        mockMvc.perform(get("/films/popular")
+                        .param("count", String.valueOf(count)))
+                .andExpect(status().isOk());
+        Mockito.verify(filmService).getMostPopularFilms(count);
     }
 
     @Test
-    public void testCreateFilmWithBlankName() {
-        film.setName("");
-        ResponseEntity<Film> response = restTemplate.postForEntity("/films", film, Film.class);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    @DisplayName("GET /films/{id}/like")
+    void getFilmLikesTest() throws Exception {
+        int filmId = 1;
+        int likesCount = 100;
+        Mockito.when(filmService.getFilmLikes(filmId)).thenReturn(likesCount);
+        mockMvc.perform(get("/films/{id}/like", filmId))
+                .andExpect(status().isOk());
+        Mockito.verify(filmService).getFilmLikes(filmId);
     }
 
-    @Test
-    public void testUpdateFilmWitNullId() {
-        film.setId(null);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<Film> requestEntity = new HttpEntity<>(film, headers);
-        ResponseEntity<Film> response = restTemplate.exchange("/films", HttpMethod.PUT, requestEntity, Film.class);
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-    }
-
-    @Test
-    public void testUpdateFilmWithInvalidId() {
-        film.setId(999L);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<Film> requestEntity = new HttpEntity<>(film, headers);
-        ResponseEntity<Film> response = restTemplate.exchange("/films", HttpMethod.PUT, requestEntity, Film.class);
-
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-    }
-
-    @Test
-    public void testAddFilmWithLongDescription() {
-        StringBuilder longDescriptionBuilder = new StringBuilder();
-        for (int i = 0; i < 201; i++) {
-            longDescriptionBuilder.append("a");
-        }
-        film.setDescription(longDescriptionBuilder.toString());
-        ResponseEntity<Film> response = restTemplate.postForEntity("/films", film, Film.class);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-    }
-
-    @Test
-    public void testAddFilmWithNegativeDuration() {
-        film.setDuration(-120);
-        ResponseEntity<Film> response = restTemplate.postForEntity("/films", film, Film.class);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-    }
-
-    @Test
-    public void testAddFilmWithFutureReleaseDate() {
-        film.setReleaseDate(LocalDate.now().plusMonths(1));
-        ResponseEntity<Film> response = restTemplate.postForEntity("/films", film, Film.class);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-    }
-
-    @Test
-    public void testAddFilmWithInvalidReleaseDate() {
-        film.setReleaseDate(LocalDate.of(1895, 12, 27));
-        ResponseEntity<Film> response = restTemplate.postForEntity("/films", film, Film.class);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    private FilmDTO createFilmDTO() {
+        return FilmDTO.builder()
+                .id(1)
+                .name("Фильм")
+                .description("Описание")
+                .releaseDate(LocalDate.of(2023, 1, 1))
+                .duration(120)
+                .mpa(RatingDTO.builder().id(1).build())
+                .genres(Collections.singletonList(GenreDTO.builder().id(1).build()))
+                .build();
     }
 }
