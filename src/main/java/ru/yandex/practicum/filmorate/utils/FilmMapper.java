@@ -11,7 +11,7 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Rating;
 import ru.yandex.practicum.filmorate.repository.genre.GenreRepository;
-import ru.yandex.practicum.filmorate.repository.mparating.RatingRepository;
+import ru.yandex.practicum.filmorate.repository.rating.RatingRepository;
 
 import java.util.*;
 import java.util.stream.Collectors;
