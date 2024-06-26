@@ -1,7 +1,6 @@
 package ru.yandex.practicum.filmorate.repository;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -14,7 +13,6 @@ import java.util.List;
 import java.util.Optional;
 
 @RequiredArgsConstructor
-@Slf4j
 public class BaseRepository<T> {
     protected final JdbcTemplate jdbc;
     protected final RowMapper<T> mapper;
@@ -51,7 +49,7 @@ public class BaseRepository<T> {
         if (id != null) {
             return id;
         } else {
-            throw new InternalServerException("Data was not saved!");
+            throw new InternalServerException("Информация не сохранена!");
         }
     }
 
@@ -66,7 +64,7 @@ public class BaseRepository<T> {
         }, keyHolder);
         var keys = keyHolder.getKeyList();
         if (keys.isEmpty()) {
-            throw new InternalServerException("Data was not saved!");
+            throw new InternalServerException("Информация не сохранена!");
         }
     }
 
@@ -74,7 +72,7 @@ public class BaseRepository<T> {
     protected void update(String query, Object... params) {
         int rowsUpdated = jdbc.update(query, params);
         if (rowsUpdated == 0) {
-            throw new InternalServerException("Data was not updated");
+            throw new InternalServerException("Информация не обновлена!");
         }
     }
 }

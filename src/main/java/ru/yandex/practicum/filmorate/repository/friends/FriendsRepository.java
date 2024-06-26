@@ -3,7 +3,6 @@ package ru.yandex.practicum.filmorate.repository.friends;
 import ru.yandex.practicum.filmorate.model.FriendshipStatus;
 
 public interface FriendsRepository {
-
     FriendshipStatus getFriendshipStatus(Integer applicantId, Integer approvingId);
 
     void setFriendshipStatus(Integer applicantId, Integer approvingId, FriendshipStatus status);
@@ -15,5 +14,4 @@ public interface FriendsRepository {
     void sendRequestForFriendship(Integer applicantId, Integer approvingId);
 
     void recallRequestForFriendship(Integer applicantId, Integer approvingId);
-
 }
