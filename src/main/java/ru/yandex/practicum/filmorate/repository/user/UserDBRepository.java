@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.exception.IdNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.repository.BaseRepository;
 import ru.yandex.practicum.filmorate.request.UserTextRequests;
@@ -25,7 +26,8 @@ public class UserDBRepository extends BaseRepository<User> implements UserReposi
 
     @Override
     public User getUserById(int userId) {
-        return findOne(UserTextRequests.GET_USER_BY_ID, userId).orElseThrow();
+        return findOne(UserTextRequests.GET_USER_BY_ID, userId).orElseThrow(() ->
+                new IdNotFoundException("Пользователь с id: " + userId + " не найден"));
     }
 
     @Override

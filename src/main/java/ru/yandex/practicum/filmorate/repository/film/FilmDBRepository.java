@@ -20,7 +20,6 @@ public class FilmDBRepository extends BaseRepository<Film> implements FilmReposi
     public FilmDBRepository(JdbcTemplate jdbc, RowMapper<Film> mapper, GenreRepository genreRepository) {
         super(jdbc, mapper);
         this.genreRepository = genreRepository;
-
     }
 
     @Override
@@ -90,14 +89,20 @@ public class FilmDBRepository extends BaseRepository<Film> implements FilmReposi
 
     @Override
     public boolean containsFilmByValue(Film film) {
-        List<Film> sameFilmList = findMany(FilmTextRequests.FIND_BY_PARAM, film.getName(), film.getReleaseDate(), film.getDuration());
-        return !sameFilmList.isEmpty();
+        Boolean exists = jdbc.queryForObject(
+                FilmTextRequests.CONTAINS_FILM_BY_VALUE,
+                Boolean.class,
+                film.getName(),
+                film.getReleaseDate(),
+                film.getDuration()
+        );
+        return exists != null && exists;
     }
 
     @Override
     public boolean containsUserLikeForFilm(Integer filmId, Integer userId) {
-        var likes = Optional.ofNullable(jdbc.queryForObject(FilmTextRequests.GET_USERLIKE_TO_FILM, Integer.class, filmId, userId));
-        return likes.isPresent() && !likes.get().equals(0);
+        Integer likes = jdbc.queryForObject(FilmTextRequests.GET_USERLIKE_TO_FILM, Integer.class, filmId, userId);
+        return likes != null && likes > 0;
     }
 
     @Override
