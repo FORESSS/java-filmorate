@@ -23,6 +23,7 @@ import static java.util.Objects.isNull;
 public class UserService {
     private final UserRepository userRepository;
     private final FriendsRepository friendsRepository;
+    private final UserMapper userMapper;
 
     public Collection<UserDTO> getAllUsers() {
         log.info("Возврат списка пользователей");
@@ -31,6 +32,12 @@ public class UserService {
                 .stream()
                 .map(UserMapper::userToDTO)
                 .toList();
+    }
+
+    public UserDTO getUserById(int userId) {
+        checkUserId(userId);
+        log.info("Возврат пользователя с id: {}", userId);
+        return userMapper.userToDTO(userRepository.getUserById(userId));
     }
 
     public UserDTO addUser(NewUserRequestDTO dto) {

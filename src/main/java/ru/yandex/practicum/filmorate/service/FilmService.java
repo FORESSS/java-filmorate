@@ -11,7 +11,7 @@ import ru.yandex.practicum.filmorate.exception.IdNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.repository.film.FilmRepository;
 import ru.yandex.practicum.filmorate.repository.genre.GenreRepository;
-import ru.yandex.practicum.filmorate.repository.mparating.RatingRepository;
+import ru.yandex.practicum.filmorate.repository.rating.RatingRepository;
 import ru.yandex.practicum.filmorate.utils.FilmMapper;
 
 import java.util.Collection;
