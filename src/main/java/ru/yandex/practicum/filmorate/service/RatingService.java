@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dto.rating.RatingDTO;
 import ru.yandex.practicum.filmorate.exception.IdNotFoundException;
-import ru.yandex.practicum.filmorate.repository.mparating.RatingRepository;
+import ru.yandex.practicum.filmorate.repository.rating.RatingRepository;
 import ru.yandex.practicum.filmorate.utils.RatingMapper;
 
 import java.util.Collection;

@@ -24,6 +24,12 @@ public class UserController {
         return userService.getAllUsers();
     }
 
+    @GetMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public UserDTO getUserById(@PathVariable("id") Integer userId) {
+        return userService.getUserById(userId);
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public UserDTO addUser(@Valid @RequestBody NewUserRequestDTO user) {

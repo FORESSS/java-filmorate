@@ -11,7 +11,7 @@ import ru.yandex.practicum.filmorate.exception.IdNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.repository.film.FilmRepository;
 import ru.yandex.practicum.filmorate.repository.genre.GenreRepository;
-import ru.yandex.practicum.filmorate.repository.mparating.RatingRepository;
+import ru.yandex.practicum.filmorate.repository.rating.RatingRepository;
 import ru.yandex.practicum.filmorate.utils.FilmMapper;
 
 import java.util.Collection;
@@ -22,8 +22,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class FilmService {
-    //@Value("${filmorate.filmservice.count}")
-    //private int countByDefault;
+
     private final FilmRepository filmRepository;
     private final GenreRepository genreRepository;
     private final RatingRepository ratingRepository;
@@ -82,9 +81,7 @@ public class FilmService {
     }
 
     public Collection<FilmDTO> getMostPopularFilms(Integer count) {
-//        if (isNull(count) || count <= 0) {
-//            count = countByDefault;
-//        }
+
         log.info("Возврат списка популярных фильмов");
         return filmRepository.getMostPopularFilms(count)
                 .stream()
